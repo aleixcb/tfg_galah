@@ -59,7 +59,7 @@ class galah_dr3_rc(object):       #agrupem les funcions dins la classe galah_dr3
         data = self.data
         
         #MATRIU ABUNDANCIES (dim = 37417 estrelles x 24 elements = files x columnes)
-""" np.c_ concatena matrius en columns (cap a la dreta), així com np.r_ concatena matrius en files(cap avall) """
+        """ np.c_ concatena matrius en columns (cap a la dreta), així com np.r_ concatena matrius en files(cap avall) """
         X        = np.c_[data['fe_h'],data['o_fe'],data['na_fe'],data['mg_fe'],  
                          data['al_fe'],data['si_fe'],data['k_fe'],data['ca_fe'],
                          data['sc_fe'],data['ti_fe'],data['v_fe'],data['cr_fe'],
@@ -82,9 +82,15 @@ class galah_dr3_rc(object):       #agrupem les funcions dins la classe galah_dr3
         gran dels dos (força un mínim error de 0,03) """
         Xerr     = np.mean( Xerr1, axis=0) #dim=1x24 # fa la mitjana dels errors de l'abundància d'un element per 
 #                                                      totes les estrelles
-        """ calcula la mitjana dels elements de la matriu seguint un dels eixos
+        """ calcula la mitjana dels elements de la matriu seguint l'eix vertical
         (axis=0 seguint la columna i axis=1 seguint la fila) """
         
+        self.abundance_titles   = [r'$\rm [Fe/H]$', r'$\rm [O/Fe]$', r'$\rm [Na/Fe]$', r'$\rm [Mg/Fe]$',
+                                   r'$\rm [Al/Fe]$', r'$\rm [Si/Fe]$', r'$\rm [K/Fe]$', r'$\rm [Ca/Fe]$',
+                                   r'$\rm [Sc/Fe]$', r'$\rm [Ti/Fe]$', r'$\rm [V/Fe]$', r'$\rm [Cr/Fe]$',
+                                   r'$\rm [Mn/Fe]$', r'$\rm [Co/Fe]$', r'$\rm [Ni/Fe]$', r'$\rm [Cu/Fe]$',
+                                   r'$\rm [Zn/Fe]$', r'$\rm [Y/Fe]$', r'$\rm [Zr/Fe]$', r'$\rm [Ba/Fe]$', 
+                                   r'$\rm [La/Fe]$', r'$\rm [Ce/Fe]$', r'$\rm [Nd/Fe]$', r'$\rm [Eu/Fe]$',]
 
         if not feh:
             X = X[:,1:]; Xerr = Xerr[1:]  #exclou [Fe/H] de les matrius (1a columna de X i 1r element de Xerr)
@@ -105,17 +111,20 @@ class galah_dr3_rc(object):       #agrupem les funcions dins la classe galah_dr3
 
     def get_ndimspace_H(self, cn=True, age=False, norm="stdev"):
         """
-        Cut out missing data and prepare t-SNE input array  (separem les dades que faltin)
+        La funció prepara l'input array d'abundàncies per t-SNE. Talla les dades fins al Cu i el normalitza.    
+        
+        
+        (Cut out missing data and prepare t-SNE input array  (separem les dades que faltin)
         Optional:
             age: Bool  - include age in the analysis
             cn:  Bool  - include [C/H] & [N/H], default: True
-            norm: str  - normalisation method, default: "stdev"
+            norm: str  - normalisation method, default: "stdev")
         """
         # For giants, everything up to Cu is okay (agafem fins al Cu)
         X        = self.data['X_H'][:, :20]
         Xerr     = np.mean(self.data['X_H_ERR'][:, :20], axis=0)
         if not cn:
-            X = X[:,2:]; Xerr = Xerr[2:]  #excloem [C/H] & [N/H]
+            X = X[:,2:]; Xerr = Xerr[2:]  #no incloure [C/H] & [N/H]
         if norm == "hogg2016":
             # Normalise everything by the typical range as in Hogg+2016: 
             Xnorm    = (X/Xerr[np.newaxis,:])
@@ -133,31 +142,62 @@ class galah_dr3_rc(object):       #agrupem les funcions dins la classe galah_dr3
     def get_umap_tsne_colours(self, p=None, lr=None, nn=None, md=None, 
                               metric="euclidean", version=""):
         """
-        Get the umap & t-SNE results for the optimal hyperparameters,
-        and also the arrays used to colour the maps.
+        La funció selecciona les columnes del fitxer 'galah_rc_dimred_hyperparametertest.fits' segons els hiperparàmetres donats:
+        
+        p: perplexity (tsne)
+        lr: learning rate (tsne)
+        nn: n_neighbors (UMAP)
+        md: min_distance (UMAP)
+        
+        i llegeix les columnes. 
+        
+        Construeix l'array de colors (abundàncies)
+        
+        
+        
+        (Get the umap & t-SNE results for the optimal hyperparameters,
+        and also the arrays used to colour the maps.)
+        
+       
         """
         #Read umap/t-SNE results table
         results = Table.read("../data/galah_rc"+version+"_dimred_hyperparametertest.fits")
-        # Get the relevant columns
-        self.Xp = results["X_PCA"]
+        
+        # Get the relevant columns (llegim el fitxer 'galah_rc_dimred_hyperparametertest.fits')
+        #PCA
+        self.Xp = results["X_PCA"]  #noms de les columnes 
         self.Yp = results["Y_PCA"]
+        #tSNE
         self.Xt = results["X_tSNE_"+metric+"_p"+str(p) + "_lr"+str(lr)]
         self.Yt = results["Y_tSNE_"+metric+"_p"+str(p) + "_lr"+str(lr)]
+        #UMAP
         self.Xu = results["X_umap_"+metric+"_nn"+str(nn) + "_md"+str(md)]
         self.Yu = results["Y_umap_"+metric+"_nn"+str(nn) + "_md"+str(md)]
+        
         # And now the colours
         data  = self.data
-        self.colors   = [data['fe_h'], data['mg_fe'], 
-                         data['mg_fe']-data['si_fe'], data['mg_fe']-(data['fe_h']+data['o_fe']),
-                         data['al_fe']-data['mg_fe'], data['sc_fe'],
-                         data['mn_fe']-data['cr_fe'],data['cu_fe']-data['ni_fe'],
-                         data['zn_fe'], data['y_fe']-data['ba_fe'], 
-                         data['zr_fe'], data['la_fe'], data['eu_fe'],
-                         data['R_Rzphi'], data['z_Rzphi'], 
-                         data['e_rv_galah'], 
-                         np.log10(data['chi2_sp']), data['vR_Rzphi'],
-                         data['vT_Rzphi'],data['vz_Rzphi']]
-        self.titles   = [r'$\rm [Fe/H]$', r'$\rm [Mg/Fe]$', r'$\rm [Mg/Si]$', r'$\rm [Mg/O]$',
+        self.colors   = [data['fe_h'],       # [Fe/H]
+                         data['mg_fe'],      # [Mg/Fe]                 
+                         data['mg_fe']-data['si_fe'],  # [Mg/Si]
+                         data['mg_fe']-(data['fe_h']+data['o_fe']),  #[Mg/O]
+                         data['al_fe']-data['mg_fe'], #[Al/Mg]
+                         data['sc_fe'],#[Sc/Fe]
+                         data['mn_fe']-data['cr_fe'],#[Mn/Cr]
+                         data['cu_fe']-data['ni_fe'],#[Cu/Ni]
+                         data['zn_fe'], #[Zn/Fe]
+                         data['y_fe']-data['ba_fe'], #[Y/Ba]
+                         data['zr_fe'],   # [Zr/Fe]
+                         data['la_fe'],   #[La/Fe]
+                         data['eu_fe'],   #[Eu/Fe]
+                         data['R_Rzphi'], #R
+                         data['z_Rzphi'], #Z
+                         data['e_rv_galah'],   #sigma_{RV}
+                         np.log10(data['chi2_sp']),  #log $\chi^2
+                         data['vR_Rzphi'],    #v_R
+                         data['vT_Rzphi'],    #v_T
+                         data['vz_Rzphi']]    #v_Z
+        
+        self.colour_titles   = [r'$\rm [Fe/H]$', r'$\rm [Mg/Fe]$', r'$\rm [Mg/Si]$', r'$\rm [Mg/O]$',
                       r'$\rm [Al/Mg]$', r'$\rm [Sc/Fe]$', r'$\rm [Mn/Cr]$', r'$\rm [Cu/Ni]$',
                       r'$\rm [Zn/Fe]$', r'$\rm [Y/Ba]$', r'$\rm [Zr/Fe]$', r'$\rm [La/Fe]$',
                       r'$\rm [Eu/Fe]$', r'$R$', r'$Z$', r'log $\sigma_{RV}$',#r'log $S/N$',
@@ -166,25 +206,45 @@ class galah_dr3_rc(object):       #agrupem les funcions dins la classe galah_dr3
 
     def get_umap_subsets(self, nn=100, md=0.1, **kwargs):
         """
-        Get the names and indices of the t-sne-defined subsets
+        La funció retorna els noms i índex dels subgrups definits per t-SNE.
+        
+        
+        (Get the names and indices of the t-sne-defined subsets
+        
+        UMAP        
+        nn: n_neighbors
+        md: min_distance
+        kwargs: keyword_arguments)
+        
         """
-        # First get umap results:
+        # First get UMAP results:
         results = Table.read("../data/galah_rc_dimred_hyperparametertest.fits")
         self.Xu = results["X_umap_euclidean_nn"+str(nn) + "_md"+str(md)]
         self.Yu = results["Y_umap_euclidean_nn"+str(nn) + "_md"+str(md)]
         
         # Now run HDBSCAN to define the subsets
         import hdbscan
-        clusterer = hdbscan.HDBSCAN(**kwargs)
-        clusterer.fit( np.vstack((self.Xu, self.Yu)).T )
-        self.classcol = clusterer.labels_
+        clusterer = hdbscan.HDBSCAN(**kwargs)  #objecte d'agrupament
+        clusterer.fit( np.vstack((self.Xu, self.Yu)).T )  #ajustem l'objecte a les dades
+        
+        self.classcol = clusterer.labels_  
+        """Matriu de subgrups (clústers). A cada mostra li assigna un numero enter, un subgrup. (soroll:-1)
+        [1,0,1,-1,1,2,5,4,4,..]        """
+        
         self.classprob= clusterer.probabilities_
-        self.subsets  = np.unique(clusterer.labels_)
+        """Matriu amb les probabilitats de pertànyer al clúster indicat (1 està al cor del clúster, 0 no en pertany)
+        [0.75, 0.67, 0.98, 0,..        """        
+        
+        self.subsets  = np.unique(clusterer.labels_)       
+        """Matriu amb els subgrups no repetits.   dim(self.subsets) = n_clústers
+        [-1,0,1,2,4,5]                 """
+        
         #self.classcol= np.char.rstrip(self.data["tsne_class_teffcut40"],b' ')#.decode('utf8').strip()
         #self.subsets = ["thin", "thick1", "thick2", "thick3", "thick4",
         #           "mpthin", "mpthintrans", "smr", "t4trans", "youngthin",
         #           "debris1", "debris2", "debris3", "debris4", "debris5", 
         #           "smr2", "t2trans1", "highTi","lowMg","highAlMg?"]
+        
         self.names   = ["", "", "", "",
                    "", "", "Transition group", "", "",
                    "Young local disc", "", "", "[s/Fe]-enhanced", "", "", r"", "Debris candidate", 
@@ -201,4 +261,7 @@ class galah_dr3_rc(object):       #agrupem les funcions dins la classe galah_dr3
                     "g", "brown", "orange", "gold", "k",
                     "yellow", 
                     "gold", "lime", "k", "royalblue"]
+        
+        
+        #https://hdbscan.readthedocs.io/en/latest/basic_hdbscan.html
 
