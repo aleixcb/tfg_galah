@@ -106,7 +106,7 @@ class galah_dr3_rc(object):       #agrupem les funcions dins la classe galah_dr3
             Xnorm    = X
         else:
             raise ValueError("Please pass a valid 'norm' keyword.")
-        self.X, self.Xerr, self.Xnorm = X, Xerr, Xnorm
+        self.X, self.Xerr1, self.Xerr, self.Xnorm = X, Xerr1, Xerr, Xnorm
         return
 
     def get_ndimspace_H(self, cn=True, age=False, norm="stdev"):
