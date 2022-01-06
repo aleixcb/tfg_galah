@@ -67,7 +67,8 @@ class galah_dr3_rc(object):       #agrupem les funcions dins la classe galah_dr3
                          data['zn_fe'],data['y_fe'],data['zr_fe'],data['ba_fe'],
                          data['la_fe'],data['ce_fe'],data['nd_fe'],data['eu_fe'] ]
         
-        
+       
+                         
         #MATRIU ERRORS
         Xerr1    = np.c_[data['e_fe_h'],data['e_o_fe'],data['e_na_fe'],data['e_mg_fe'],
                          data['e_al_fe'],data['e_si_fe'],data['e_k_fe'],data['e_ca_fe'],
@@ -75,6 +76,8 @@ class galah_dr3_rc(object):       #agrupem les funcions dins la classe galah_dr3
                          data['e_mn_fe'],data['e_co_fe'],data['e_ni_fe'],data['e_cu_fe'],
                          data['e_zn_fe'],data['e_y_fe'],data['e_zr_fe'],data['e_ba_fe'],
                          data['e_la_fe'],data['e_ce_fe'],data['e_nd_fe'],data['e_eu_fe'] ]
+        
+        
 
         # Take care of the 0.0 uncertainties: forced minimum to 0.03 
         Xerr1[:, :] = np.maximum(Xerr1, 0.03*np.ones(Xerr1.shape))
@@ -90,7 +93,9 @@ class galah_dr3_rc(object):       #agrupem les funcions dins la classe galah_dr3
                                    r'$\rm [Sc/Fe]$', r'$\rm [Ti/Fe]$', r'$\rm [V/Fe]$', r'$\rm [Cr/Fe]$',
                                    r'$\rm [Mn/Fe]$', r'$\rm [Co/Fe]$', r'$\rm [Ni/Fe]$', r'$\rm [Cu/Fe]$',
                                    r'$\rm [Zn/Fe]$', r'$\rm [Y/Fe]$', r'$\rm [Zr/Fe]$', r'$\rm [Ba/Fe]$', 
-                                   r'$\rm [La/Fe]$', r'$\rm [Ce/Fe]$', r'$\rm [Nd/Fe]$', r'$\rm [Eu/Fe]$',]
+                                   r'$\rm [La/Fe]$', r'$\rm [Ce/Fe]$', r'$\rm [Nd/Fe]$', r'$\rm [Eu/Fe]$']
+        
+        
 
         if not feh:
             X = X[:,1:]; Xerr = Xerr[1:]  #exclou [Fe/H] de les matrius (1a columna de X i 1r element de Xerr)
